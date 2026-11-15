@@ -15,7 +15,9 @@ Route::get('/login', [LoginController::class, 'index'])->name('login');
 Route::post('/login', [LoginController::class, 'store']);
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
-Route::resource('sanctions', SanctionController::class)
-    ->only(['index', 'create', 'store', 'edit', 'update']);
+Route::middleware('auth')->group(function () {
+    Route::resource('sanctions', SanctionController::class)
+        ->only(['index', 'create', 'store', 'edit', 'update']);
 
-Route::resource('attendance', AttendanceController::class)->except(['show']);
+    Route::resource('attendance', AttendanceController::class)->except(['show']);
+});
