@@ -80,6 +80,10 @@
             <h2>Sanctions</h2>
             <p>Manage student sanctions</p>
         </a>
+        <a class="card" href="{{ route('events.index') }}">
+            <h2>Events</h2>
+            <p>Manage events</p>
+        </a>
         <a class="card" href="{{ route('attendance.index') }}">
             <h2>Attendance</h2>
             <p>Track event attendance</p>
