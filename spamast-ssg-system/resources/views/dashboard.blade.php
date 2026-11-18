@@ -88,6 +88,10 @@
             <h2>Attendance</h2>
             <p>Track event attendance</p>
         </a>
+        <a class="card" href="{{ route('profile.edit') }}">
+            <h2>Edit Profile</h2>
+            <p>Update your account details</p>
+        </a>
     </div>
 </div>
 </body>
