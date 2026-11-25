@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Student extends Authenticatable
 {
@@ -12,6 +13,7 @@ class Student extends Authenticatable
         'email',
         'password',
         'course',
+        'program_id',
         'year_level',
         'contact_number',
         'role',
@@ -26,5 +28,10 @@ class Student extends Authenticatable
         return [
             'password' => 'hashed',
         ];
+    }
+
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class);
     }
 }

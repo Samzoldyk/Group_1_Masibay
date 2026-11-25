@@ -33,7 +33,8 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])
         ->name('profile.update');
 
-    Route::middleware('role:officer,adviser')->group(function () {
+    // Officers and advisers can manage records through the Gate.
+    Route::middleware('can:manage-records')->group(function () {
         Route::resource('sanctions', SanctionController::class)
             ->only(['index', 'create', 'store', 'edit', 'update']);
 
