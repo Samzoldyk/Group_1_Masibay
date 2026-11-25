@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,6 +57,7 @@
     <header class="top">
         <div class="brand">SPAMAST SSG <span>EVENT MANAGEMENT SYSTEM</span></div>
         <nav>
+            <a href="{{ route('dashboard') }}">Back to Dashboard</a>
             <a href="{{ url('/') }}">Home</a>
             <a href="{{ route('attendance.index') }}">Records</a>
             <a href="{{ route('attendance.create') }}">Record Attendance</a>

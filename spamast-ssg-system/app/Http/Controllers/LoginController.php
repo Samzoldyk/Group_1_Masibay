@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -7,17 +6,15 @@ use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
-    // Show the login page
     public function index()
     {
         return view('login');
     }
 
-    // Check the email and password
     public function store(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
@@ -26,7 +23,12 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
-            return redirect()->intended(route('dashboard'));
+            return match (Auth::user()->role) {
+                'officer' => redirect()->route('officer.dashboard'),
+                'adviser' => redirect()->route('adviser.dashboard'),
+                'student' => redirect()->route('student.dashboard'),
+                default => abort(403, 'Unauthorized role.'),
+            };
         }
 
         return back()
@@ -34,7 +36,6 @@ class LoginController extends Controller
             ->onlyInput('email');
     }
 
-    // Log the user out
     public function destroy(Request $request)
     {
         Auth::logout();

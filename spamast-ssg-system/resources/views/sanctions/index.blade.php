@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,6 +36,13 @@
             border-radius: 6px;
             text-decoration: none;
         }
+        a.dashboard-button {
+            background: #1d4ed8;
+            color: white;
+            padding: 11px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -65,71 +73,77 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <div>
-            <h1>Sanctions Management</h1>
-            <p>SPAMAST Supreme Student Government</p>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Sanctions Management</h1>
+                <p>SPAMAST Supreme Student Government</p>
+            </div>
+
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <a class="dashboard-button" href="{{ route('dashboard') }}">Back to Dashboard</a>
+
+                <a class="button" href="{{ route('sanctions.create') }}">+ Add Sanction</a>
+
+                <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+                    @csrf
+                    <button type="submit" style="background:#6b7280; color:white; padding:11px 16px; border:none; border-radius:6px; cursor:pointer; font-size:14px;">Logout</button>
+                </form>
+            </div>
         </div>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <a class="button" href="{{ route('sanctions.create') }}">+ Add Sanction</a>
-            <form method="POST" action="{{ route('logout') }}" style="margin:0;">
-                @csrf
-                <button type="submit" style="background:#6b7280; color:white; padding:11px 16px; border:none; border-radius:6px; cursor:pointer; font-size:14px;">Logout</button>
-            </form>
+
+        @if (session('success'))
+            <div class="success">{{ session('success') }}</div>
+        @endif
+
+        @if ($errors->any())
+            <div class="success">
+                Please check the form for errors.
+            </div>
+        @endif
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Student Name</th>
+                        <th>Event</th>
+                        <th>Sanction</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($sanctions as $sanction)
+                        <tr>
+                            <td>{{ $sanction->student_id }}</td>
+                            <td>{{ $sanction->student_name }}</td>
+                            <td>{{ $sanction->event_name }}</td>
+                            <td>{{ $sanction->sanction_type }}</td>
+                            <td>{{ $sanction->sanction_date?->format('M d, Y') ?? '—' }}</td>
+                            <td>
+                                <span class="status">
+                                    {{ str($sanction->status)->replace('_', ' ')->title() }}
+                                </span>
+                            </td>
+                            <td>
+                                <a class="edit" href="{{ route('sanctions.edit', $sanction) }}">Edit</a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="empty">
+                                No sanction records yet. Click "Add Sanction" to get started.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+
+        {{ $sanctions->links() }}
     </div>
-    @if (session('success'))
-        <div class="success">{{ session('success') }}</div>
-    @endif
-
-    @if ($errors->any())
-        <div class="success">
-            Please check the form for errors.
-        </div>
-    @endif
-
-    <div class="table-wrap">
-        <table>
-            <thead>
-            <tr>
-                <th>Student ID</th>
-                <th>Student Name</th>
-                <th>Event</th>
-                <th>Sanction</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-            </thead>
-            <tbody>
-            @forelse ($sanctions as $sanction)
-                <tr>
-                    <td>{{ $sanction->student_id }}</td>
-                    <td>{{ $sanction->student_name }}</td>
-                    <td>{{ $sanction->event_name }}</td>
-                    <td>{{ $sanction->sanction_type }}</td>
-                    <td>{{ $sanction->sanction_date?->format('M d, Y') ?? '—' }}</td>
-                    <td>
-                        <span class="status">
-                            {{ str($sanction->status)->replace('_', ' ')->title() }}
-                        </span>
-                    </td>
-                    <td>
-                        <a class="edit" href="{{ route('sanctions.edit', $sanction) }}">Edit</a>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="7" class="empty">
-                        No sanction records yet. Click "Add Sanction" to get started.
-                    </td>
-                </tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    {{ $sanctions->links() }}
-</div>
 </body>
 </html>

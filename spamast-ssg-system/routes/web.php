@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Http\Controllers\AttendanceController;
@@ -22,18 +23,38 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
 
-    Route::resource('sanctions', SanctionController::class)
-        ->only(['index', 'create', 'store', 'edit', 'update']);
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
 
-    Route::resource('attendance', AttendanceController::class)->except(['show']);
+    Route::put('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
 
-    Route::resource('events', EventController::class);
+    Route::middleware('role:officer,adviser')->group(function () {
+        Route::resource('sanctions', SanctionController::class)
+            ->only(['index', 'create', 'store', 'edit', 'update']);
 
-    Route::middleware('role:officer')->get('/officer/dashboard', [DashboardController::class, 'index'])->name('officer.dashboard');
-    Route::middleware('role:student')->get('/student/dashboard', [DashboardController::class, 'index'])->name('student.dashboard');
+        Route::resource('attendance', AttendanceController::class)
+            ->except(['show']);
+
+        Route::resource('events', EventController::class);
+    });
+
+    Route::middleware('role:officer')->get(
+        '/officer/dashboard',
+        [DashboardController::class, 'officer']
+    )->name('officer.dashboard');
+
+    Route::middleware('role:adviser')->get(
+        '/adviser/dashboard',
+        [DashboardController::class, 'adviser']
+    )->name('adviser.dashboard');
+
+    Route::middleware('role:student')->get(
+        '/student/dashboard',
+        [DashboardController::class, 'student']
+    )->name('student.dashboard');
 });
