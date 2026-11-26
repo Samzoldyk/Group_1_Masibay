@@ -1,6 +1,6 @@
-
 <?php
 
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
@@ -34,7 +34,6 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])
         ->name('profile.update');
 
-    // Officers and advisers can manage records through the Gate.
     Route::middleware('can:manage-records')->group(function () {
         Route::resource('sanctions', SanctionController::class)
             ->only(['index', 'create', 'store', 'edit', 'update']);
@@ -44,7 +43,9 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('events', EventController::class);
 
-        // Event session management
+        Route::resource('announcements', AnnouncementController::class)
+            ->except(['show']);
+
         Route::post('/events/{event}/sessions', [EventSessionController::class, 'store'])
             ->name('events.sessions.store');
 
