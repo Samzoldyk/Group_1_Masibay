@@ -45,6 +45,14 @@
             </a>
         </form>
 
+        <!-- Summary (T11: collection groupBy, map, sum) -->
+        <p style="margin: 16px 0;">
+            Present: {{ $statusSummary['present'] ?? 0 }} |
+            Late: {{ $statusSummary['late'] ?? 0 }} |
+            Absent: {{ $statusSummary['absent'] ?? 0 }} |
+            Total time attended: {{ $totalMinutes }} minutes
+        </p>
+
         <!-- Attendance Table -->
         <table>
             <thead>

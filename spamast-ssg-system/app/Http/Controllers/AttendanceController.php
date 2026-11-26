@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -99,6 +100,21 @@ class AttendanceController extends Controller
             $query->where('attendances.status', $statusFilter);
         }
 
+        // T11: Support Collection summary (groupBy, map, sum).
+        $rows = (clone $query)->get();
+
+        $statusSummary = $rows
+            ->groupBy('status')
+            ->map(fn ($group) => $group->count());
+
+        $totalMinutes = $rows->sum(function ($row) {
+            if ($row->time_in && $row->time_out) {
+                return (int) Carbon::parse($row->time_in)
+                    ->diffInMinutes(Carbon::parse($row->time_out));
+            }
+            return 0;
+        });
+
         $records = $query
             ->orderByDesc('attendances.created_at')
             ->paginate(15)
@@ -110,6 +126,8 @@ class AttendanceController extends Controller
             'statuses' => self::STATUSES,
             'eventFilter' => $eventFilter,
             'statusFilter' => $statusFilter,
+            'statusSummary' => $statusSummary,
+            'totalMinutes' => $totalMinutes,
         ]);
     }
 
