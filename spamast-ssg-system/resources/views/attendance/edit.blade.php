@@ -1,3 +1,4 @@
+
 @extends('attendance.layout')
 
 @section('title', 'Edit Attendance')
@@ -24,10 +25,17 @@
             </div>
 
             <div class="field">
+                <label>Event Session</label>
+                <div class="readonly">{{ $sessionName ?? 'Legacy attendance' }}</div>
+            </div>
+
+            <div class="field">
                 <label for="status">Status</label>
                 <select id="status" name="status" required>
                     @foreach ($statuses as $status)
-                        <option value="{{ $status }}" @selected(old('status', $attendance->status) === $status)>{{ ucfirst($status) }}</option>
+                        <option value="{{ $status }}" @selected(old('status', $attendance->status) === $status)>
+                            {{ ucfirst($status) }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -35,11 +43,14 @@
             <div class="row">
                 <div class="field">
                     <label for="time_in">Time in</label>
-                    <input type="time" id="time_in" name="time_in" value="{{ old('time_in', $attendance->time_in ? substr($attendance->time_in, 0, 5) : '') }}">
+                    <input type="time" id="time_in" name="time_in"
+                        value="{{ old('time_in', $attendance->time_in ? substr($attendance->time_in, 0, 5) : '') }}">
                 </div>
+
                 <div class="field">
                     <label for="time_out">Time out</label>
-                    <input type="time" id="time_out" name="time_out" value="{{ old('time_out', $attendance->time_out ? substr($attendance->time_out, 0, 5) : '') }}">
+                    <input type="time" id="time_out" name="time_out"
+                        value="{{ old('time_out', $attendance->time_out ? substr($attendance->time_out, 0, 5) : '') }}">
                 </div>
             </div>
 

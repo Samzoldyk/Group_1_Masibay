@@ -3,8 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
-    protected $fillable = ['name', 'event_date', 'venue', 'description'];
+    protected $fillable = [
+        'name',
+        'event_date',
+        'venue',
+        'description',
+    ];
+
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(EventSession::class);
+    }
 }

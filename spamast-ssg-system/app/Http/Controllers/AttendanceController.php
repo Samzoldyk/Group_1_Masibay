@@ -5,92 +5,75 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class AttendanceController extends Controller
 {
     private const STATUSES = ['present', 'late', 'absent'];
 
-    /**
-     * The events module owns the events table. Find which column holds the event's name,
-     * so this module keeps working whichever name the events developer chose.
-     * Returns null when the events table does not exist yet.
-     */
-    private function eventTitleColumn(): ?string
-    {
-        if (! Schema::hasTable('events')) {
-            return null;
-        }
-
-        foreach (['title', 'name', 'event_name'] as $column) {
-            if (Schema::hasColumn('events', $column)) {
-                return $column;
-            }
-        }
-
-        return 'id';
-    }
-
     private function events()
     {
-        $column = $this->eventTitleColumn();
-
-        if ($column === null) {
-            return collect();
-        }
-
         return DB::table('events')
-            ->select('id', DB::raw("`{$column}` as label"))
-            ->orderByDesc('id')
+            ->select('id', 'name as label')
+            ->orderByDesc('event_date')
             ->get();
     }
 
-    private function eventLabel(int $eventId): string
+    private function sessions()
     {
-        $column = $this->eventTitleColumn();
-
-        if ($column === null) {
-            return 'Event #' . $eventId;
-        }
-
-        $value = DB::table('events')->where('id', $eventId)->value($column);
-
-        return $value !== null ? (string) $value : 'Event #' . $eventId;
+        return DB::table('event_sessions')
+            ->join('events', 'events.id', '=', 'event_sessions.event_id')
+            ->select(
+                'event_sessions.*',
+                'events.name as event_label'
+            )
+            ->orderBy('event_sessions.session_date')
+            ->orderBy('event_sessions.start_time')
+            ->get();
     }
 
     private function timeOrderError(array $data): ?string
     {
-        if (! empty($data['time_in']) && ! empty($data['time_out']) && $data['time_out'] < $data['time_in']) {
+        if (
+            !empty($data['time_in']) &&
+            !empty($data['time_out']) &&
+            $data['time_out'] < $data['time_in']
+        ) {
             return 'Time out cannot be earlier than time in.';
         }
 
         return null;
     }
 
-    /** View attendance records (with optional filters). */
     public function index(Request $request)
     {
-        $column = $this->eventTitleColumn();
-
         $query = DB::table('attendances')
             ->join('students', 'students.id', '=', 'attendances.student_id')
-            ->select('attendances.*', 'students.name as student_name', 'students.email as student_email');
-
-        if ($column !== null) {
-            $query->leftJoin('events', 'events.id', '=', 'attendances.event_id')
-                ->addSelect(DB::raw("events.`{$column}` as event_label"));
-        }
+            ->leftJoin('events', 'events.id', '=', 'attendances.event_id')
+            ->leftJoin('event_sessions', 'event_sessions.id', '=', 'attendances.event_session_id')
+            ->select(
+                'attendances.*',
+                'students.name as student_name',
+                'students.email as student_email',
+                'events.name as event_label',
+                'event_sessions.session_name'
+            );
 
         if ($request->filled('event_id')) {
             $query->where('attendances.event_id', $request->input('event_id'));
         }
 
-        if ($request->filled('status') && in_array($request->input('status'), self::STATUSES, true)) {
+        if (
+            $request->filled('status') &&
+            in_array($request->input('status'), self::STATUSES, true)
+        ) {
             $query->where('attendances.status', $request->input('status'));
         }
 
-        $records = $query->orderByDesc('attendances.created_at')->paginate(15)->withQueryString();
+        $records = $query
+            ->orderByDesc('attendances.created_at')
+            ->paginate(15)
+            ->withQueryString();
 
         return view('attendance.index', [
             'records' => $records,
@@ -99,61 +82,100 @@ class AttendanceController extends Controller
         ]);
     }
 
-    /** Show the "record attendance" form. */
     public function create()
     {
         return view('attendance.create', [
-            'students' => DB::table('students')->orderBy('name')->get(['id', 'name', 'email']),
+            'students' => DB::table('students')
+                ->orderBy('name')
+                ->get(['id', 'name', 'email']),
             'events' => $this->events(),
+            'sessions' => $this->sessions(),
             'statuses' => self::STATUSES,
         ]);
     }
 
-    /** Save a new attendance record linked to a student and an event. */
     public function store(Request $request)
     {
-        $eventRules = ['required', 'integer'];
-        if (Schema::hasTable('events')) {
-            $eventRules[] = Rule::exists('events', 'id');
-        }
-
         $data = $request->validate([
-            'student_id' => ['required', 'integer', Rule::exists('students', 'id')],
-            'event_id' => $eventRules,
-            'status' => ['required', Rule::in(self::STATUSES)],
+            'student_id' => [
+                'required',
+                'integer',
+                Rule::exists('students', 'id'),
+            ],
+            'event_id' => [
+                'required',
+                'integer',
+                Rule::exists('events', 'id'),
+            ],
+            'event_session_id' => [
+                'required',
+                'integer',
+                Rule::exists('event_sessions', 'id'),
+            ],
+            'status' => [
+                'required',
+                Rule::in(self::STATUSES),
+            ],
             'time_in' => ['nullable', 'date_format:H:i'],
             'time_out' => ['nullable', 'date_format:H:i'],
             'remarks' => ['nullable', 'string', 'max:255'],
         ]);
 
-        if ($error = $this->timeOrderError($data)) {
-            return back()->withInput()->withErrors(['time_out' => $error]);
+        $session = DB::table('event_sessions')
+            ->where('id', $data['event_session_id'])
+            ->first();
+
+        if (!$session || $session->event_id != $data['event_id']) {
+            return back()->withInput()->withErrors([
+                'event_session_id' => 'The selected session does not belong to this event.',
+            ]);
         }
 
-        $alreadyRecorded = Attendance::where('student_id', $data['student_id'])
-            ->where('event_id', $data['event_id'])
-            ->exists();
+        if ($error = $this->timeOrderError($data)) {
+            return back()->withInput()->withErrors([
+                'time_out' => $error,
+            ]);
+        }
+
+        $alreadyRecorded = Attendance::where(
+            'student_id',
+            $data['student_id']
+        )->where(
+            'event_session_id',
+            $data['event_session_id']
+        )->exists();
 
         if ($alreadyRecorded) {
             return back()->withInput()->withErrors([
-                'student_id' => 'This student already has an attendance record for this event.',
+                'student_id' => 'This student already has an attendance record for this session.',
             ]);
         }
 
         Attendance::create($data);
 
-        return redirect()->route('attendance.index')->with('success', 'Attendance recorded.');
+        return redirect()->route('attendance.index')
+            ->with('success', 'Attendance recorded.');
     }
 
-    /** Show the edit form (used to add time out or fix the status). */
     public function edit(Attendance $attendance)
     {
-        $student = DB::table('students')->where('id', $attendance->student_id)->first(['name', 'email']);
+        $student = DB::table('students')
+            ->where('id', $attendance->student_id)
+            ->first(['name', 'email']);
+
+        $event = DB::table('events')
+            ->where('id', $attendance->event_id)
+            ->value('name');
+
+        $session = DB::table('event_sessions')
+            ->where('id', $attendance->event_session_id)
+            ->value('session_name');
 
         return view('attendance.edit', [
             'attendance' => $attendance,
             'studentName' => $student->name ?? ('Student #' . $attendance->student_id),
-            'eventLabel' => $this->eventLabel((int) $attendance->event_id),
+            'eventLabel' => $event ?? ('Event #' . $attendance->event_id),
+            'sessionName' => $session,
             'statuses' => self::STATUSES,
         ]);
     }
@@ -168,18 +190,22 @@ class AttendanceController extends Controller
         ]);
 
         if ($error = $this->timeOrderError($data)) {
-            return back()->withInput()->withErrors(['time_out' => $error]);
+            return back()->withInput()->withErrors([
+                'time_out' => $error,
+            ]);
         }
 
         $attendance->update($data);
 
-        return redirect()->route('attendance.index')->with('success', 'Attendance updated.');
+        return redirect()->route('attendance.index')
+            ->with('success', 'Attendance updated.');
     }
 
     public function destroy(Attendance $attendance)
     {
         $attendance->delete();
 
-        return redirect()->route('attendance.index')->with('success', 'Attendance record deleted.');
+        return redirect()->route('attendance.index')
+            ->with('success', 'Attendance record deleted.');
     }
 }

@@ -1,3 +1,4 @@
+
 @extends('attendance.layout')
 
 @section('title', 'Record Attendance')
@@ -10,8 +11,11 @@
 
     @if ($events->isEmpty())
         <div class="alert warn">
-            No events found. Attendance needs the events module's table (<code>events</code>) to exist and contain at least one event.
-            Pull the latest work from the team, run <code>php artisan migrate</code>, and add an event first.
+            No events found. Create an event first.
+        </div>
+    @elseif ($sessions->isEmpty())
+        <div class="alert warn">
+            No event sessions found. Create a session first.
         </div>
     @endif
 
@@ -24,7 +28,9 @@
                 <select id="student_id" name="student_id" required>
                     <option value="">Select a student</option>
                     @foreach ($students as $student)
-                        <option value="{{ $student->id }}" @selected(old('student_id') == $student->id)>{{ $student->name }} ({{ $student->email }})</option>
+                        <option value="{{ $student->id }}" @selected(old('student_id') == $student->id)>
+                            {{ $student->name }} ({{ $student->email }})
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -34,7 +40,26 @@
                 <select id="event_id" name="event_id" required>
                     <option value="">Select an event</option>
                     @foreach ($events as $event)
-                        <option value="{{ $event->id }}" @selected(old('event_id') == $event->id)>{{ $event->label }}</option>
+                        <option value="{{ $event->id }}" @selected(old('event_id') == $event->id)>
+                            {{ $event->label }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="event_session_id">Event Session</label>
+                <select id="event_session_id" name="event_session_id" required>
+                    <option value="">Select a session</option>
+                    @foreach ($sessions as $session)
+                        <option
+                            value="{{ $session->id }}"
+                            data-event="{{ $session->event_id }}"
+                            @selected(old('event_session_id') == $session->id)
+                        >
+                            {{ $session->event_label }} | {{ $session->session_name }}
+                            ({{ $session->session_date }})
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -43,7 +68,9 @@
                 <label for="status">Status</label>
                 <select id="status" name="status" required>
                     @foreach ($statuses as $status)
-                        <option value="{{ $status }}" @selected(old('status', 'present') === $status)>{{ ucfirst($status) }}</option>
+                        <option value="{{ $status }}" @selected(old('status', 'present') === $status)>
+                            {{ ucfirst($status) }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -53,6 +80,7 @@
                     <label for="time_in">Time in</label>
                     <input type="time" id="time_in" name="time_in" value="{{ old('time_in') }}">
                 </div>
+
                 <div class="field">
                     <label for="time_out">Time out</label>
                     <input type="time" id="time_out" name="time_out" value="{{ old('time_out') }}">
@@ -69,13 +97,38 @@
     </div>
 
     <script>
-        // Pre-fill "Time in" with the current local time when the form is first opened.
+        const eventSelect = document.getElementById('event_id');
+        const sessionSelect = document.getElementById('event_session_id');
+
+        function filterSessions() {
+            const selectedEvent = eventSelect.value;
+
+            Array.from(sessionSelect.options).forEach(option => {
+                if (!option.value) return;
+
+                const matches = option.dataset.event === selectedEvent;
+                option.hidden = !matches;
+                option.disabled = !matches;
+            });
+
+            const selectedOption = sessionSelect.options[sessionSelect.selectedIndex];
+
+            if (selectedOption && selectedOption.disabled) {
+                sessionSelect.value = '';
+            }
+        }
+
+        eventSelect.addEventListener('change', filterSessions);
+        filterSessions();
+
         (function () {
-            var input = document.getElementById('time_in');
+            const input = document.getElementById('time_in');
+
             if (input && !input.value) {
-                var now = new Date();
-                var h = String(now.getHours()).padStart(2, '0');
-                var m = String(now.getMinutes()).padStart(2, '0');
+                const now = new Date();
+                const h = String(now.getHours()).padStart(2, '0');
+                const m = String(now.getMinutes()).padStart(2, '0');
+
                 input.value = h + ':' + m;
             }
         })();

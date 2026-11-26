@@ -4,6 +4,7 @@
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventSessionController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
@@ -42,6 +43,19 @@ Route::middleware('auth')->group(function () {
             ->except(['show']);
 
         Route::resource('events', EventController::class);
+
+        // Event session management
+        Route::post('/events/{event}/sessions', [EventSessionController::class, 'store'])
+            ->name('events.sessions.store');
+
+        Route::get('/events/{event}/sessions/{session}/edit', [EventSessionController::class, 'edit'])
+            ->name('events.sessions.edit');
+
+        Route::put('/events/{event}/sessions/{session}', [EventSessionController::class, 'update'])
+            ->name('events.sessions.update');
+
+        Route::delete('/events/{event}/sessions/{session}', [EventSessionController::class, 'destroy'])
+            ->name('events.sessions.destroy');
     });
 
     Route::middleware('role:officer')->get(
