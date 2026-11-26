@@ -16,7 +16,7 @@ class AnnouncementController extends Controller
             ->paginate(10);
 
         // Collection helper: map()
-        // Str helper: limit()
+        // Str helpers: limit() and slug()
         $announcements->setCollection(
             $announcements->getCollection()->map(function ($announcement) {
                 $announcement->short_content = Str::limit(
@@ -46,15 +46,26 @@ class AnnouncementController extends Controller
                 'nullable',
                 'file',
                 'mimes:pdf,doc,docx,jpg,jpeg,png',
-                'max:5120'
+                'max:5120',
             ],
         ]);
 
         $data['student_id'] = $request->user()->id;
 
         if ($request->hasFile('attachment')) {
-            $data['attachment_path'] = $request->file('attachment')
-                ->store('announcements', 'public');
+            $file = $request->file('attachment');
+
+            $filename = Str::slug(
+                pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)
+            );
+
+            $filename = $filename . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            $data['attachment_path'] = $file->storeAs(
+                'announcements',
+                $filename,
+                'public'
+            );
         }
 
         unset($data['attachment']);
@@ -80,7 +91,7 @@ class AnnouncementController extends Controller
                 'nullable',
                 'file',
                 'mimes:pdf,doc,docx,jpg,jpeg,png',
-                'max:5120'
+                'max:5120',
             ],
         ]);
 
@@ -91,8 +102,19 @@ class AnnouncementController extends Controller
                 );
             }
 
-            $data['attachment_path'] = $request->file('attachment')
-                ->store('announcements', 'public');
+            $file = $request->file('attachment');
+
+            $filename = Str::slug(
+                pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)
+            );
+
+            $filename = $filename . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            $data['attachment_path'] = $file->storeAs(
+                'announcements',
+                $filename,
+                'public'
+            );
         }
 
         unset($data['attachment']);

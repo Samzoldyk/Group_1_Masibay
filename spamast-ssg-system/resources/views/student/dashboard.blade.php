@@ -142,6 +142,13 @@
             font-size: 13px;
             color: #64748b;
         }
+
+        .weather-credit {
+            margin-top: 14px;
+            font-size: 11px !important;
+            font-weight: 400 !important;
+            color: #94a3b8 !important;
+        }
     </style>
 </head>
 <body>
@@ -204,6 +211,8 @@
                     Weather information is currently unavailable.
                 </p>
             @endif
+
+            <p class="weather-credit">Weather data by Open-Meteo</p>
         </div>
 
     </div>

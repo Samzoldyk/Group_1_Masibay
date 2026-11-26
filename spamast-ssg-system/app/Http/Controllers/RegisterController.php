@@ -6,6 +6,7 @@ use App\Models\Institute;
 use App\Models\Program;
 use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class RegisterController extends Controller
@@ -47,6 +48,8 @@ class RegisterController extends Controller
             'year_level' => $validated['year_level'] ?? null,
             'contact_number' => $validated['contact_number'] ?? null,
         ]);
+
+        Cache::forget('dashboard.total_students');
 
         return redirect()->route('login')
             ->with('success', 'Registration successful! Please login.');

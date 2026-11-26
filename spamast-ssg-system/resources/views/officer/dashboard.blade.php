@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -128,6 +127,12 @@
             font-size: 13px;
             color: #64748b;
         }
+
+        .weather-credit {
+            margin-top: 14px;
+            font-size: 11px;
+            color: #94a3b8;
+        }
     </style>
 </head>
 <body>
@@ -170,6 +175,8 @@
             @else
                 <p>Weather information is currently unavailable.</p>
             @endif
+
+            <p class="weather-credit">Weather data by Open-Meteo</p>
         </div>
 
         <!-- Events -->

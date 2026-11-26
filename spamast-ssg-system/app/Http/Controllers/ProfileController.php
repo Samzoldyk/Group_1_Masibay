@@ -44,7 +44,16 @@ class ProfileController extends Controller
             ],
             'year_level' => ['required', 'string', 'max:20'],
             'contact_number' => ['nullable', 'string', 'max:20'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'current_password' => [
+                'required_with:password',
+                'current_password',
+            ],
+            'password' => [
+                'nullable',
+                'string',
+                'min:8',
+                'confirmed',
+            ],
         ]);
 
         if (!empty($data['program_id'])) {
@@ -53,6 +62,8 @@ class ProfileController extends Controller
         } else {
             unset($data['program_id']);
         }
+
+        unset($data['current_password']);
 
         if (empty($data['password'])) {
             unset($data['password']);

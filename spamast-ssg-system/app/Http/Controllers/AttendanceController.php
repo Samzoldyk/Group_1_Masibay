@@ -47,6 +47,35 @@ class AttendanceController extends Controller
 
     public function index(Request $request)
     {
+        // Clear saved filters.
+        if ($request->boolean('clear')) {
+            session()->forget([
+                'attendance_filters.event_id',
+                'attendance_filters.status',
+            ]);
+
+            return redirect()->route('attendance.index');
+        }
+
+        // Save submitted filters.
+        if ($request->has('event_id')) {
+            session()->put(
+                'attendance_filters.event_id',
+                $request->input('event_id')
+            );
+        }
+
+        if ($request->has('status')) {
+            session()->put(
+                'attendance_filters.status',
+                $request->input('status')
+            );
+        }
+
+        // Retrieve saved filters.
+        $eventFilter = session('attendance_filters.event_id');
+        $statusFilter = session('attendance_filters.status');
+
         $query = DB::table('attendances')
             ->join('students', 'students.id', '=', 'attendances.student_id')
             ->leftJoin('events', 'events.id', '=', 'attendances.event_id')
@@ -59,15 +88,15 @@ class AttendanceController extends Controller
                 'event_sessions.session_name'
             );
 
-        if ($request->filled('event_id')) {
-            $query->where('attendances.event_id', $request->input('event_id'));
+        if (!empty($eventFilter)) {
+            $query->where('attendances.event_id', $eventFilter);
         }
 
         if (
-            $request->filled('status') &&
-            in_array($request->input('status'), self::STATUSES, true)
+            !empty($statusFilter) &&
+            in_array($statusFilter, self::STATUSES, true)
         ) {
-            $query->where('attendances.status', $request->input('status'));
+            $query->where('attendances.status', $statusFilter);
         }
 
         $records = $query
@@ -79,6 +108,8 @@ class AttendanceController extends Controller
             'records' => $records,
             'events' => $this->events(),
             'statuses' => self::STATUSES,
+            'eventFilter' => $eventFilter,
+            'statusFilter' => $statusFilter,
         ]);
     }
 

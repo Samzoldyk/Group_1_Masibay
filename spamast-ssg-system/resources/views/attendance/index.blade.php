@@ -5,16 +5,22 @@
 @section('content')
     <div class="head">
         <h1>Attendance Records</h1>
-        <a class="btn" href="{{ route('attendance.create') }}">+ Record Attendance</a>
+
+        @if(auth()->user()->role === 'officer')
+            <a class="btn" href="{{ route('attendance.create') }}">+ Record Attendance</a>
+        @endif
     </div>
 
     <div class="card">
-        <!-- Filter Form -->
+        <!-- Saved Filter Form -->
         <form method="GET" action="{{ route('attendance.index') }}" class="filters">
+
             <select name="event_id">
                 <option value="">All events</option>
+
                 @foreach ($events as $event)
-                    <option value="{{ $event->id }}" @selected(request('event_id') == $event->id)>
+                    <option value="{{ $event->id }}"
+                        @selected(($eventFilter ?? '') == $event->id)>
                         {{ $event->label }}
                     </option>
                 @endforeach
@@ -22,18 +28,24 @@
 
             <select name="status">
                 <option value="">All statuses</option>
+
                 @foreach ($statuses as $status)
-                    <option value="{{ $status }}" @selected(request('status') === $status)>
+                    <option value="{{ $status }}"
+                        @selected(($statusFilter ?? '') === $status)>
                         {{ ucfirst($status) }}
                     </option>
                 @endforeach
             </select>
 
             <button class="btn small" type="submit">Filter</button>
-            <a class="btn ghost small" href="{{ route('attendance.index') }}">Reset</a>
+
+            <a class="btn ghost small"
+                href="{{ route('attendance.index', ['clear' => 1]) }}">
+                Clear
+            </a>
         </form>
 
-        <!-- Data Table -->
+        <!-- Attendance Table -->
         <table>
             <thead>
                 <tr>
@@ -43,7 +55,10 @@
                     <th>Status</th>
                     <th>Time in</th>
                     <th>Time out</th>
-                    <th>Actions</th>
+
+                    @if(auth()->user()->role === 'officer')
+                        <th>Actions</th>
+                    @endif
                 </tr>
             </thead>
 
@@ -55,9 +70,13 @@
                             <small>{{ $record->student_email }}</small>
                         </td>
 
-                        <td>{{ $record->event_label ?? ('Event #' . $record->event_id) }}</td>
+                        <td>
+                            {{ $record->event_label ?? ('Event #' . $record->event_id) }}
+                        </td>
 
-                        <td>{{ $record->session_name ?? 'Legacy attendance' }}</td>
+                        <td>
+                            {{ $record->session_name ?? 'Legacy attendance' }}
+                        </td>
 
                         <td>
                             <span class="badge {{ $record->status }}">
@@ -73,23 +92,34 @@
                             {{ $record->time_out ? \Carbon\Carbon::parse($record->time_out)->format('g:i A') : '—' }}
                         </td>
 
-                        <td>
-                            <div class="actions">
-                                <a class="btn small ghost" href="{{ route('attendance.edit', $record->id) }}">Edit</a>
+                        @if(auth()->user()->role === 'officer')
+                            <td>
+                                <div class="actions">
+                                    <a class="btn small ghost"
+                                        href="{{ route('attendance.edit', $record->id) }}">
+                                        Edit
+                                    </a>
 
-                                <form method="POST"
-                                    action="{{ route('attendance.destroy', $record->id) }}"
-                                    onsubmit="return confirm('Delete this attendance record?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn small danger" type="submit">Delete</button>
-                                </form>
-                            </div>
-                        </td>
+                                    <form method="POST"
+                                        action="{{ route('attendance.destroy', $record->id) }}"
+                                        onsubmit="return confirm('Delete this attendance record?');">
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button class="btn small danger" type="submit">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        @endif
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="empty">No attendance records yet.</td>
+                        <td colspan="{{ auth()->user()->role === 'officer' ? 7 : 6 }}"
+                            class="empty">
+                            No attendance records found.
+                        </td>
                     </tr>
                 @endforelse
             </tbody>

@@ -218,6 +218,15 @@
             <h2>Change Password</h2>
 
             <div class="form-group">
+               <label for="current_password">Current Password</label>
+               <input type="password" id="current_password" name="current_password"
+                autocomplete="current-password">
+                @error('current_password')
+                <div class="error">{{ $message }}</div>
+                @enderror
+                </div>
+
+            <div class="form-group">
                 <label for="password">New Password</label>
                 <input type="password" id="password" name="password">
                 <div class="hint">Leave blank to keep your current password.</div>

@@ -34,17 +34,47 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])
         ->name('profile.update');
 
+    // All authenticated users can read announcements.
+    Route::get('/announcements', [AnnouncementController::class, 'index'])
+        ->name('announcements.index');
+
+    // Officers and Advisers can view attendance records.
+    Route::middleware('can:manage-records')->get(
+        '/attendance',
+        [AttendanceController::class, 'index']
+    )->name('attendance.index');
+
+    // Only Officers can manage attendance.
+    Route::middleware('role:officer')->group(function () {
+        Route::get('/attendance/create', [AttendanceController::class, 'create'])
+            ->name('attendance.create');
+
+        Route::post('/attendance', [AttendanceController::class, 'store'])
+            ->name('attendance.store');
+
+        Route::get('/attendance/{attendance}/edit', [AttendanceController::class, 'edit'])
+            ->name('attendance.edit');
+
+        Route::put('/attendance/{attendance}', [AttendanceController::class, 'update'])
+            ->name('attendance.update');
+
+        Route::patch('/attendance/{attendance}', [AttendanceController::class, 'update']);
+
+        Route::delete('/attendance/{attendance}', [AttendanceController::class, 'destroy'])
+            ->name('attendance.destroy');
+    });
+
+    // Officers and Advisers can manage records.
     Route::middleware('can:manage-records')->group(function () {
+
         Route::resource('sanctions', SanctionController::class)
             ->only(['index', 'create', 'store', 'edit', 'update']);
 
-        Route::resource('attendance', AttendanceController::class)
-            ->except(['show']);
-
         Route::resource('events', EventController::class);
 
+        // Announcement management, excluding the public-to-authenticated index.
         Route::resource('announcements', AnnouncementController::class)
-            ->except(['show']);
+            ->except(['index', 'show']);
 
         Route::post('/events/{event}/sessions', [EventSessionController::class, 'store'])
             ->name('events.sessions.store');
